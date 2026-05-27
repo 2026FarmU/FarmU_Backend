@@ -49,6 +49,7 @@ structlog = "^24.4.0"
 
 # AWS
 boto3 = "^1.35.0"
+greenlet = "^3.5.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.0"

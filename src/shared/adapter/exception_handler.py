@@ -33,6 +33,34 @@ def _problem(status_code: int, detail: str, path: str, code: str) -> dict:
 
 
 def register_domain_exception_handlers(app: FastAPI) -> None:
+    # ── Auth 전용 (401 / 403) ─────────────────────────────────────
+    from src.auth.domain.exception import (
+        InvalidCredentialsException,
+        WithdrawnUserException,
+    )
+
+    @app.exception_handler(InvalidCredentialsException)
+    async def invalid_credentials(
+        request: Request, exc: InvalidCredentialsException
+    ) -> ORJSONResponse:
+        return ORJSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content=_problem(401, exc.message, request.url.path, exc.code),
+            media_type="application/problem+json",
+        )
+
+    @app.exception_handler(WithdrawnUserException)
+    async def withdrawn_user(
+        request: Request, exc: WithdrawnUserException
+    ) -> ORJSONResponse:
+        return ORJSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content=_problem(403, exc.message, request.url.path, exc.code),
+            media_type="application/problem+json",
+        )
+
+    # ── 공통 도메인 예외 ──────────────────────────────────────────
+
     @app.exception_handler(EntityNotFoundException)
     async def entity_not_found(request: Request, exc: EntityNotFoundException) -> ORJSONResponse:
         return ORJSONResponse(

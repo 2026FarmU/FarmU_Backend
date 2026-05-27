@@ -9,9 +9,9 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from src.infrastructure.database.session import Base
 from src.main.config import get_settings
 
-# BC별 ORM 모델 임포트 (마이그레이션 감지용)
-# from src.auth.adapter.persistence.model import *  # noqa: F401, F403
-# from src.union.adapter.persistence.model import *  # noqa: F401, F403
+# BC별 ORM 모델 임포트 (마이그레이션 autogenerate 감지용)
+from src.auth.adapter.persistence.model.user_model import UserOrmModel  # noqa: F401
+from src.auth.adapter.persistence.model.union_model import UnionOrmModel  # noqa: F401
 
 config = context.config
 settings = get_settings()
