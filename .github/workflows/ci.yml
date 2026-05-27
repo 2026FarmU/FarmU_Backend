@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Poetry
+        run: curl -sSL https://install.python-poetry.org | python3 -
+      - name: Install deps
+        run: poetry install
+      - name: Ruff lint
+        run: poetry run ruff check src tests
+      - name: Ruff format
+        run: poetry run ruff format --check src tests
+      - name: mypy
+        run: poetry run mypy src
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: farmu
+          POSTGRES_PASSWORD: farmu
+          POSTGRES_DB: farmu_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd="pg_isready -U farmu"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=5
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      DATABASE_URL: postgresql+asyncpg://farmu:farmu@localhost:5432/farmu_test
+      REDIS_URL: redis://localhost:6379/0
+      JWT_SECRET_KEY: test-secret-key
+      ENVIRONMENT: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Poetry
+        run: curl -sSL https://install.python-poetry.org | python3 -
+      - name: Install deps
+        run: poetry install
+      - name: Run migrations
+        run: poetry run alembic upgrade head
+      - name: Run tests
+        run: poetry run pytest --cov=src --cov-report=xml
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml

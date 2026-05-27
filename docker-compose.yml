@@ -1,0 +1,55 @@
+services:
+  postgres:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: farmu-postgres
+    environment:
+      POSTGRES_USER: farmu
+      POSTGRES_PASSWORD: farmu
+      POSTGRES_DB: farmu
+    ports:
+      - "5432:5432"
+    volumes:
+      - farmu_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U farmu -d farmu"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: farmu-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - farmu_redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # 로컬 S3 (MinIO)
+  minio:
+    image: minio/minio:latest
+    container_name: farmu-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"   # Console
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - farmu_minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  farmu_postgres_data:
+  farmu_redis_data:
+  farmu_minio_data:
