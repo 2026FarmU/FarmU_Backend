@@ -44,14 +44,24 @@ def create_app() -> FastAPI:
     # 예외 핸들러
     register_exception_handlers(app)
 
+    from src.shared.adapter.exception_handler import register_domain_exception_handlers
+    register_domain_exception_handlers(app)
+
     # 헬스체크
     @app.get("/health", tags=["health"])
     async def health_check() -> dict[str, str]:
         return {"status": "ok", "version": settings.app_version}
 
-    # TODO: 각 BC 라우터 등록
-    # from src.auth.adapter.http.router import auth_router
-    # app.include_router(auth_router, prefix="/api/v1")
+    # BC 라우터 등록
+    from src.auth.adapter.http.router.auth_router import router as auth_router
+    from src.performance.adapter.http.router.dashboard_router import router as dashboard_router
+    from src.member.adapter.http.router.member_router import router as member_router
+    from src.shipping.adapter.http.router.shipping_router import router as shipping_router
+
+    app.include_router(auth_router)
+    app.include_router(dashboard_router)
+    app.include_router(member_router)
+    app.include_router(shipping_router)
 
     return app
 

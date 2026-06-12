@@ -401,7 +401,7 @@ make help           # 전체 커맨드 목록 출력
 
 | BC | 경로 |
 |---|---|
-| 인증 | `POST /api/v1/auth/login` |
+| 인증 | `POST /api/v1/auth/login`, `POST /api/v1/auth/register`, `POST /api/v1/auth/users` |
 | 대시보드 | `GET /api/v1/dashboard/summary` |
 | 조합원 | `GET /api/v1/members/ranking` |
 | 출하 추천 | `GET /api/v1/shipping/recommendations` |
@@ -412,3 +412,10 @@ make help           # 전체 커맨드 목록 출력
 | 데이터 업로드 | `POST /api/v1/data/uploads` |
 
 > 전체 API 명세는 개발 서버의 Swagger UI(`/docs`)에서 확인하세요. (`DEBUG=true` 설정 필요)
+
+make docker-up    # 인프라 시작
+make docker-down  # 인프라 종료
+make migrate      # DB 마이그레이션
+make dev          # 개발 서버 (hot-reload)
+make lint         # 린트 검사
+make test         # 테스트 실행

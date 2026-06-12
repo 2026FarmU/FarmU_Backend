@@ -1,0 +1,15 @@
+services:
+  postgres-test:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: farmu-postgres-test
+    environment:
+      POSTGRES_USER: farmu
+      POSTGRES_PASSWORD: farmu
+      POSTGRES_DB: farmu_test
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U farmu -d farmu_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
