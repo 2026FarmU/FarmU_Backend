@@ -1,8 +1,28 @@
 """Inbound port — Router가 호출하는 UseCase 인터페이스."""
 from abc import ABC, abstractmethod
 
-from src.auth.application.dto.commands import LoginCommand, RefreshTokenCommand
-from src.auth.application.dto.results import LoginResult, TokenPair, UserInfo
+from src.auth.application.dto.commands import (
+    CreateUserCommand,
+    LoginCommand,
+    RefreshTokenCommand,
+    RegisterCommand,
+)
+from src.auth.application.dto.results import (
+    LoginResult,
+    RegisterResult,
+    TokenPair,
+    UserInfo,
+)
+
+
+class RegisterUseCase(ABC):
+    @abstractmethod
+    async def register(self, command: RegisterCommand) -> RegisterResult: ...
+
+
+class CreateUserUseCase(ABC):
+    @abstractmethod
+    async def create_user(self, command: CreateUserCommand) -> RegisterResult: ...
 
 
 class LoginUseCase(ABC):

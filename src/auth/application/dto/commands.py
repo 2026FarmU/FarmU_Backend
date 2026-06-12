@@ -10,5 +10,22 @@ class LoginCommand:
 
 
 @dataclass(frozen=True)
+class RegisterCommand:
+    login_id: str
+    password: str
+    name: str
+    union_code: str
+ 
+
+@dataclass(frozen=True)
+class CreateUserCommand:
+    login_id: str
+    password: str
+    name: str
+    union_id: str
+    role: str = "MEMBER"
+
+
+@dataclass(frozen=True)
 class RefreshTokenCommand:
     refresh_token: str

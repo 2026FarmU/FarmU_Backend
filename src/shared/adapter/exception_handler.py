@@ -38,6 +38,8 @@ def register_domain_exception_handlers(app: FastAPI) -> None:
         InvalidCredentialsException,
         WithdrawnUserException,
     )
+    from src.performance.domain.exception import PerformanceNotCalculatedException
+    from src.shipping.domain.exception import RecommendationNotFoundException
 
     @app.exception_handler(InvalidCredentialsException)
     async def invalid_credentials(
@@ -56,6 +58,28 @@ def register_domain_exception_handlers(app: FastAPI) -> None:
         return ORJSONResponse(
             status_code=status.HTTP_403_FORBIDDEN,
             content=_problem(403, exc.message, request.url.path, exc.code),
+            media_type="application/problem+json",
+        )
+
+
+
+    @app.exception_handler(RecommendationNotFoundException)
+    async def recommendation_not_found(
+        request: Request, exc: RecommendationNotFoundException
+    ) -> ORJSONResponse:
+        return ORJSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=_problem(404, exc.message, request.url.path, exc.code),
+            media_type="application/problem+json",
+        )
+
+    @app.exception_handler(PerformanceNotCalculatedException)
+    async def performance_not_calculated(
+        request: Request, exc: PerformanceNotCalculatedException
+    ) -> ORJSONResponse:
+        return ORJSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=_problem(404, exc.message, request.url.path, exc.code),
             media_type="application/problem+json",
         )
 

@@ -25,3 +25,8 @@ class LoginResult:
     refresh_token: str
     expires_in: int
     user: UserInfo
+
+
+@dataclass(frozen=True)
+class RegisterResult:
+    user_id: str

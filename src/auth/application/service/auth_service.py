@@ -1,10 +1,22 @@
 """Auth 유스케이스 구현체."""
-from src.auth.application.dto.commands import LoginCommand, RefreshTokenCommand
-from src.auth.application.dto.results import LoginResult, TokenPair, UserInfo
+from src.auth.application.dto.commands import (
+    CreateUserCommand,
+    LoginCommand,
+    RefreshTokenCommand,
+    RegisterCommand,
+)
+from src.auth.application.dto.results import (
+    LoginResult,
+    RegisterResult,
+    TokenPair,
+    UserInfo,
+)
 from src.auth.application.port.provided.auth_use_case import (
+    CreateUserUseCase,
     GetCurrentUserUseCase,
     LoginUseCase,
     LogoutUseCase,
+    RegisterUseCase,
     RefreshTokenUseCase,
 )
 from src.auth.application.port.required.jwt_service import JwtService, TokenPayload
@@ -12,15 +24,20 @@ from src.auth.application.port.required.password_hasher import PasswordHasher
 from src.auth.application.port.required.token_store import TokenStore
 from src.auth.application.port.required.union_query_port import UnionQueryPort
 from src.auth.domain.exception import (
+    DuplicateLoginIdException,
     InvalidCredentialsException,
     UnionNotFoundException,
 )
+from src.auth.domain.model.role import Role
+from src.auth.domain.model.user import User
 from src.auth.domain.repository.user_repository import UserRepository
 from src.auth.domain.model.vo import LoginId, UnionId, UserId
-from src.shared.domain.exception import EntityNotFoundException
+from src.shared.domain.exception import DomainException, EntityNotFoundException
 
 
 class AuthService(
+    RegisterUseCase,
+    CreateUserUseCase,
     LoginUseCase,
     RefreshTokenUseCase,
     LogoutUseCase,
@@ -39,6 +56,60 @@ class AuthService(
         self._password_hasher = password_hasher
         self._jwt_service = jwt_service
         self._token_store = token_store
+
+    # ── RegisterUseCase ───────────────────────────────────────────
+
+    async def register(self, command: RegisterCommand) -> RegisterResult:
+        union_id = await self._union_query.find_id_by_code(command.union_code)
+        if union_id is None:
+            raise UnionNotFoundException(command.union_code)
+
+        login_id = LoginId(command.login_id)
+        domain_union_id = UnionId(union_id)
+        if await self._user_repo.exists_by_login_id_and_union(login_id, domain_union_id):
+            raise DuplicateLoginIdException(command.login_id)
+
+        user = User(
+            id=UserId.generate(),
+            login_id=login_id,
+            hashed_password=self._password_hasher.hash(command.password),
+            name=command.name,
+            role=Role.UNION_ADMIN,
+            union_id=domain_union_id,
+        )
+        saved = await self._user_repo.save(user)
+        return RegisterResult(user_id=str(saved.id))
+
+    async def create_user(self, command: CreateUserCommand) -> RegisterResult:
+        login_id = LoginId(command.login_id)
+        domain_union_id = UnionId(command.union_id)
+        if await self._user_repo.exists_by_login_id_and_union(login_id, domain_union_id):
+            raise DuplicateLoginIdException(command.login_id)
+
+        try:
+            role = Role(command.role)
+        except ValueError as exc:
+            raise DomainException(
+                message=f"지원하지 않는 role 입니다: {command.role}",
+                code="INVALID_ROLE",
+            ) from exc
+
+        if role not in (Role.MEMBER, Role.UNION_ADMIN):
+            raise DomainException(
+                message="관리자 생성에서는 MEMBER 또는 UNION_ADMIN만 허용됩니다.",
+                code="INVALID_ROLE",
+            )
+
+        user = User(
+            id=UserId.generate(),
+            login_id=login_id,
+            hashed_password=self._password_hasher.hash(command.password),
+            name=command.name,
+            role=role,
+            union_id=domain_union_id,
+        )
+        saved = await self._user_repo.save(user)
+        return RegisterResult(user_id=str(saved.id))
 
     # ── LoginUseCase ──────────────────────────────────────────────
 

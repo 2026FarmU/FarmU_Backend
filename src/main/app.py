@@ -54,7 +54,14 @@ def create_app() -> FastAPI:
 
     # BC 라우터 등록
     from src.auth.adapter.http.router.auth_router import router as auth_router
+    from src.performance.adapter.http.router.dashboard_router import router as dashboard_router
+    from src.member.adapter.http.router.member_router import router as member_router
+    from src.shipping.adapter.http.router.shipping_router import router as shipping_router
+
     app.include_router(auth_router)
+    app.include_router(dashboard_router)
+    app.include_router(member_router)
+    app.include_router(shipping_router)
 
     return app
 

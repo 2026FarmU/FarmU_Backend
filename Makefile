@@ -46,11 +46,11 @@ migrate-down: ## 마이그레이션 롤백
 
 docker-up: ## 로컬 인프라 시작 (PostgreSQL, Redis, MinIO)
 	docker compose up -d
-	@echo "⏳ 서비스 준비 대기..."
+	@echo "서비스 준비 대기..."
 	@sleep 3
-	@echo "✅ PostgreSQL: localhost:5432"
-	@echo "✅ Redis:      localhost:6379"
-	@echo "✅ MinIO:      localhost:9000 (콘솔: localhost:9001)"
+	@echo "PostgreSQL: localhost:5432"
+	@echo "Redis:      localhost:6379"
+	@echo "MinIO:      localhost:9000 (콘솔: localhost:9001)"
 
 docker-down: ## 로컬 인프라 중지
 	docker compose down
