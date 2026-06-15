@@ -2,7 +2,10 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.alert.adapter.persistence.model.alert_model import AlertOrmModel
-from src.performance.adapter.persistence.model.dashboard_model import UnionKpiOrmModel, UnionTrendOrmModel
+from src.performance.adapter.persistence.model.dashboard_model import (
+    UnionKpiOrmModel,
+    UnionTrendOrmModel,
+)
 from src.performance.domain.exception import PerformanceNotCalculatedException
 from src.shared.domain.exception import DomainException, EntityNotFoundException
 

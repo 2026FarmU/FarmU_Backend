@@ -44,8 +44,8 @@ class JwtServiceImpl(JwtService):
             "iat": now,
             "exp": now + delta,
         }
-        return jwt.encode(
-            data, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
+        return str(
+            jwt.encode(data, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
         )
 
     def _decode(self, token: str, token_type: str) -> TokenPayload:
@@ -56,9 +56,9 @@ class JwtServiceImpl(JwtService):
                 algorithms=[settings.jwt_algorithm],
             )
         except ExpiredSignatureError:
-            raise _make_expired_exc(token_type)
+            raise _make_expired_exc(token_type) from None
         except JWTError:
-            raise _make_invalid_exc(token_type)
+            raise _make_invalid_exc(token_type) from None
 
         if claims.get("type") != token_type:
             raise _make_invalid_exc(token_type)

@@ -1,4 +1,5 @@
 """도메인 예외 → HTTP 응답 매핑 미들웨어."""
+
 from datetime import UTC, datetime
 
 from fastapi import FastAPI, Request, status
@@ -13,10 +14,14 @@ from src.shared.domain.exception import (
 )
 
 
-def _problem(status_code: int, detail: str, path: str, code: str) -> dict:
+def _problem(status_code: int, detail: str, path: str, code: str) -> dict[str, object]:
     titles = {
-        400: "Bad Request", 401: "Unauthorized", 403: "Forbidden",
-        404: "Not Found", 409: "Conflict", 422: "Unprocessable Entity",
+        400: "Bad Request",
+        401: "Unauthorized",
+        403: "Forbidden",
+        404: "Not Found",
+        409: "Conflict",
+        422: "Unprocessable Entity",
         500: "Internal Server Error",
     }
     return {
@@ -36,6 +41,7 @@ def register_domain_exception_handlers(app: FastAPI) -> None:
     # ── Auth 전용 (401 / 403) ─────────────────────────────────────
     from src.auth.domain.exception import (
         InvalidCredentialsException,
+        InvalidPasswordException,
         WithdrawnUserException,
     )
     from src.performance.domain.exception import PerformanceNotCalculatedException
@@ -52,16 +58,20 @@ def register_domain_exception_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(WithdrawnUserException)
-    async def withdrawn_user(
-        request: Request, exc: WithdrawnUserException
-    ) -> ORJSONResponse:
+    async def withdrawn_user(request: Request, exc: WithdrawnUserException) -> ORJSONResponse:
         return ORJSONResponse(
             status_code=status.HTTP_403_FORBIDDEN,
             content=_problem(403, exc.message, request.url.path, exc.code),
             media_type="application/problem+json",
         )
 
-
+    @app.exception_handler(InvalidPasswordException)
+    async def invalid_password(request: Request, exc: InvalidPasswordException) -> ORJSONResponse:
+        return ORJSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content=_problem(400, exc.message, request.url.path, exc.code),
+            media_type="application/problem+json",
+        )
 
     @app.exception_handler(RecommendationNotFoundException)
     async def recommendation_not_found(
@@ -102,7 +112,9 @@ def register_domain_exception_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(BusinessRuleViolationException)
-    async def business_rule(request: Request, exc: BusinessRuleViolationException) -> ORJSONResponse:
+    async def business_rule(
+        request: Request, exc: BusinessRuleViolationException
+    ) -> ORJSONResponse:
         return ORJSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content=_problem(400, exc.message, request.url.path, exc.code),

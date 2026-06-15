@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import ORJSONResponse
 
@@ -10,7 +10,7 @@ def _problem_detail(
     detail: str,
     instance: str,
     code: str,
-) -> dict:
+) -> dict[str, object]:
     return {
         "type": "about:blank",
         "title": _status_title(status_code),
@@ -41,6 +41,30 @@ def _status_title(status_code: int) -> str:
 
 
 def register_exception_handlers(app: FastAPI) -> None:
+    @app.exception_handler(HTTPException)
+    async def http_exception_handler(request: Request, exc: HTTPException) -> ORJSONResponse:
+        code_by_status = {
+            400: "INVALID_REQUEST",
+            401: "UNAUTHORIZED",
+            403: "FORBIDDEN_ROLE",
+            404: "NOT_FOUND",
+            409: "CONFLICT",
+            413: "FILE_TOO_LARGE",
+            415: "UNSUPPORTED_FILE_TYPE",
+            422: "VALIDATION_FAILED",
+        }
+        return ORJSONResponse(
+            status_code=exc.status_code,
+            content=_problem_detail(
+                exc.status_code,
+                str(exc.detail),
+                request.url.path,
+                code_by_status.get(exc.status_code, "HTTP_ERROR"),
+            ),
+            media_type="application/problem+json",
+            headers=exc.headers,
+        )
+
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(
         request: Request, exc: RequestValidationError
@@ -58,9 +82,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(Exception)
-    async def unhandled_exception_handler(
-        request: Request, exc: Exception
-    ) -> ORJSONResponse:
+    async def unhandled_exception_handler(request: Request, exc: Exception) -> ORJSONResponse:
         return ORJSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content=_problem_detail(

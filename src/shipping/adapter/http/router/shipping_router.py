@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.adapter.http.router.deps import CurrentUser
 from src.infrastructure.database.session import get_db_session
+from src.main.response_schema import DataResponse, ListResponse
 from src.shipping.adapter.http.schema.shipping_schema import (
     AccuracyResponse,
     DecisionRequest,
@@ -21,7 +22,11 @@ DbSession = Annotated[AsyncSession, Depends(get_db_session)]
 router = APIRouter(prefix="/api/v1/shipping", tags=["shipping"])
 
 
-@router.get("/recommendations", status_code=status.HTTP_200_OK)
+@router.get(
+    "/recommendations",
+    status_code=status.HTTP_200_OK,
+    response_model=ListResponse[RecommendationItemResponse],
+)
 async def get_recommendations(
     unionId: str | None = None,
     memberId: str | None = None,
@@ -74,7 +79,9 @@ async def decide_recommendation(
     await svc.decide_recommendation(recommendation_id, body.decision, body.actualShipDate, body.memo)
 
 
-@router.get("/accuracy", status_code=status.HTTP_200_OK)
+@router.get(
+    "/accuracy", status_code=status.HTTP_200_OK, response_model=DataResponse[AccuracyResponse]
+)
 async def get_accuracy(
     unionId: str,
     from_: str = Query(alias="from", pattern=r"^\d{4}-\d{2}$"),
@@ -89,7 +96,7 @@ async def get_accuracy(
     rows = await svc.get_accuracy(unionId, from_, to)
     overall = 0.0
     if rows:
-        overall = sum(float(x.hit_rate) for x in rows) / len(rows)
+        overall = sum(float(x.hit_rate) for x in rows) / len(rows) * 100
 
     return ORJSONResponse({"data": AccuracyResponse(
         overallHitRate=overall,
@@ -98,7 +105,7 @@ async def get_accuracy(
                 period=r.period,
                 totalRecommendations=r.total_recommendations,
                 accepted=r.accepted,
-                hitRate=float(r.hit_rate),
+                hitRate=round(float(r.hit_rate) * 100),
             )
             for r in rows
         ],

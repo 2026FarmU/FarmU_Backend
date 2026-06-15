@@ -1,11 +1,12 @@
 from datetime import datetime
+
 from pydantic import BaseModel
 
 
 class GroupDistributionResponse(BaseModel):
     top: int
-    middle: int
-    needsImprovement: int
+    mid: int
+    low: int
 
 
 class KpiResponse(BaseModel):
@@ -23,6 +24,7 @@ class DashboardSummaryResponse(BaseModel):
     groupDistribution: GroupDistributionResponse
     kpi: KpiResponse
     lastUpdated: datetime
+    availablePeriods: list[str]
 
 
 class TrendPointResponse(BaseModel):
@@ -30,9 +32,14 @@ class TrendPointResponse(BaseModel):
     value: float
 
 
+class TrendSeriesResponse(BaseModel):
+    name: str
+    points: list[TrendPointResponse]
+
+
 class DashboardTrendResponse(BaseModel):
     metric: str
-    series: list[TrendPointResponse]
+    series: list[TrendSeriesResponse]
 
 
 class AlertItemResponse(BaseModel):
@@ -48,3 +55,12 @@ class AlertItemResponse(BaseModel):
 
 class AlertDismissRequest(BaseModel):
     status: str
+
+
+class AlertPageResponse(BaseModel):
+    data: list[AlertItemResponse]
+    page: int
+    size: int
+    totalElements: int
+    totalPages: int
+    hasNext: bool

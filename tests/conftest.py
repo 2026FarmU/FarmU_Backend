@@ -10,31 +10,50 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from src.account_models import (  # noqa: F401
+    NotificationSettingOrmModel,
+    UnionWeightOrmModel,
+    UserMemberLinkOrmModel,
+    UserProfileOrmModel,
+)
+from src.alert.adapter.persistence.model.alert_model import AlertOrmModel  # noqa: F401
 from src.auth.adapter.external.jwt_service_impl import JwtServiceImpl
-from src.auth.application.port.required.jwt_service import TokenPayload
-from src.infrastructure.database.session import Base
-from src.main.app import create_app
-
 from src.auth.adapter.persistence.model.union_model import UnionOrmModel  # noqa: F401
 from src.auth.adapter.persistence.model.user_model import UserOrmModel  # noqa: F401
+from src.auth.application.port.required.jwt_service import TokenPayload
+from src.data_ingest.adapter.persistence.model.upload_model import DataUploadOrmModel  # noqa: F401
+from src.infrastructure.database.session import Base
+from src.land.adapter.persistence.model.land_model import (  # noqa: F401
+    LandOrmModel,
+    LandSuitabilityOrmModel,
+)
+from src.main.app import create_app
 from src.member.adapter.persistence.model.member_model import (  # noqa: F401
     MemberImprovementTaskOrmModel,
     MemberOrmModel,
     MemberPerformanceOrmModel,
     MemberXaiFactorOrmModel,
 )
+from src.mentoring.adapter.persistence.model.mentoring_model import (
+    MentoringMatchOrmModel,  # noqa: F401
+    MentoringTaskOrmModel,  # noqa: F401
+)
+from src.notification.adapter.persistence.model.notification_model import (
+    NotificationOrmModel,  # noqa: F401
+)
 from src.performance.adapter.persistence.model.dashboard_model import (  # noqa: F401
     UnionKpiOrmModel,
     UnionTrendOrmModel,
 )
-from src.alert.adapter.persistence.model.alert_model import AlertOrmModel  # noqa: F401
+from src.report.adapter.persistence.model.report_model import ReportOrmModel  # noqa: F401
+from src.scenario.adapter.persistence.model.scenario_model import ScenarioOrmModel  # noqa: F401
 from src.shipping.adapter.persistence.model.shipping_model import (  # noqa: F401
     ShippingAccuracyOrmModel,
     ShippingRecommendationOrmModel,
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 async def db_session():
     engine = create_async_engine(os.environ["DATABASE_URL"], future=True)
     async with engine.begin() as conn:
@@ -43,7 +62,7 @@ async def db_session():
     async with factory() as session:
         await session.execute(
             text(
-                "TRUNCATE TABLE shipping_accuracy_monthly, shipping_recommendations, alerts, union_trends, union_kpis, member_improvement_tasks, "
+                "TRUNCATE TABLE notifications, data_uploads, reports, mentoring_tasks, mentoring_matches, scenarios, land_suitabilities, lands, union_weights, notification_settings, user_member_links, user_profiles, shipping_accuracy_monthly, shipping_recommendations, alerts, union_trends, union_kpis, member_improvement_tasks, "
                 "member_xai_factors, member_performances, members, users, unions "
                 "RESTART IDENTITY CASCADE"
             )
@@ -53,7 +72,7 @@ async def db_session():
     await engine.dispose()
 
 
-@pytest.fixture()
+@pytest.fixture
 async def app_client(db_session):
     from src.auth.adapter.http.router import deps as auth_deps
     from src.member.adapter.http.router import member_router
@@ -78,12 +97,14 @@ async def app_client(db_session):
         yield client
 
 
-@pytest.fixture()
+@pytest.fixture
 def make_token():
     svc = JwtServiceImpl()
 
     def _make(user_id: str, role: str, union_id: str) -> str:
-        token, _ = svc.create_access_token(TokenPayload(user_id=user_id, role=role, union_id=union_id))
+        token, _ = svc.create_access_token(
+            TokenPayload(user_id=user_id, role=role, union_id=union_id)
+        )
         return token
 
     return _make

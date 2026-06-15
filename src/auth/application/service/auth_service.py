@@ -16,8 +16,8 @@ from src.auth.application.port.provided.auth_use_case import (
     GetCurrentUserUseCase,
     LoginUseCase,
     LogoutUseCase,
-    RegisterUseCase,
     RefreshTokenUseCase,
+    RegisterUseCase,
 )
 from src.auth.application.port.required.jwt_service import JwtService, TokenPayload
 from src.auth.application.port.required.password_hasher import PasswordHasher
@@ -26,12 +26,13 @@ from src.auth.application.port.required.union_query_port import UnionQueryPort
 from src.auth.domain.exception import (
     DuplicateLoginIdException,
     InvalidCredentialsException,
+    InvalidPasswordException,
     UnionNotFoundException,
 )
 from src.auth.domain.model.role import Role
 from src.auth.domain.model.user import User
-from src.auth.domain.repository.user_repository import UserRepository
 from src.auth.domain.model.vo import LoginId, UnionId, UserId
+from src.auth.domain.repository.user_repository import UserRepository
 from src.shared.domain.exception import DomainException, EntityNotFoundException
 
 
@@ -94,9 +95,9 @@ class AuthService(
                 code="INVALID_ROLE",
             ) from exc
 
-        if role not in (Role.MEMBER, Role.UNION_ADMIN):
+        if role not in (Role.MEMBER, Role.UNION_ADMIN, Role.CONSULTANT):
             raise DomainException(
-                message="관리자 생성에서는 MEMBER 또는 UNION_ADMIN만 허용됩니다.",
+                message="지원하지 않는 사용자 역할입니다.",
                 code="INVALID_ROLE",
             )
 
@@ -208,3 +209,33 @@ class AuthService(
             union_id=str(user.union_id),
             permissions=user.permissions,
         )
+
+    async def update_profile(self, user_id: str, name: str) -> UserInfo:
+        user = await self._user_repo.find_by_id(UserId(user_id))
+        if user is None:
+            raise EntityNotFoundException("User", user_id)
+        user.verify_not_withdrawn()
+        user.name = name
+        saved = await self._user_repo.save(user)
+        return UserInfo(
+            user_id=str(saved.id),
+            name=saved.name,
+            role=saved.role,
+            union_id=str(saved.union_id),
+            permissions=saved.permissions,
+        )
+
+    async def change_password(
+        self,
+        user_id: str,
+        current_password: str,
+        new_password: str,
+    ) -> None:
+        user = await self._user_repo.find_by_id(UserId(user_id))
+        if user is None:
+            raise EntityNotFoundException("User", user_id)
+        user.verify_not_withdrawn()
+        if not self._password_hasher.verify(current_password, user.hashed_password):
+            raise InvalidPasswordException()
+        user.hashed_password = self._password_hasher.hash(new_password)
+        await self._user_repo.save(user)

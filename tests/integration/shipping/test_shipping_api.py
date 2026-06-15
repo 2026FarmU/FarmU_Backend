@@ -22,6 +22,7 @@ async def test_shipping_recommendations_and_decision(app_client, db_session, mak
     res3 = await app_client.get('/api/v1/shipping/accuracy', params={'unionId':'uni_001','from':'2026-01','to':'2026-05'}, headers={'Authorization':f'Bearer {token}'})
     assert res3.status_code == 200
     assert res3.json()['data']['monthly'][0]['period'] == '2026-05'
+    assert res3.json()['data']['monthly'][0]['hitRate'] == 87
 
 
 @pytest.mark.asyncio

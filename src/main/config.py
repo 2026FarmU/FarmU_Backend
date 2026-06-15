@@ -44,6 +44,15 @@ class Settings(BaseSettings):
     # Sentry
     sentry_dsn: str = ""
 
+    # Gemini AI
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-3.5-flash"
+    gemini_timeout_seconds: float = 20.0
+
+    # API documentation
+    docs_enabled: bool = True
+    public_base_url: str = "http://localhost:8000"
+
     @field_validator("database_url")
     @classmethod
     def validate_database_url(cls, v: str) -> str:

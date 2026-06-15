@@ -1,0 +1,26 @@
+services:
+  api:
+    ports: !reset []
+    expose:
+      - "8000"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      DOMAIN: ${DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - farmu_caddy_data:/data
+      - farmu_caddy_config:/config
+
+volumes:
+  farmu_caddy_data:
+  farmu_caddy_config:

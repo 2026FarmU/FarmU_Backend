@@ -29,3 +29,11 @@ class UnionNotFoundException(DomainException):
             message=f"조합을 찾을 수 없습니다. code={union_code}",
             code="UNION_NOT_FOUND",
         )
+
+
+class InvalidPasswordException(DomainException):
+    def __init__(self) -> None:
+        super().__init__(
+            message="기존 비밀번호가 일치하지 않습니다.",
+            code="INVALID_PASSWORD",
+        )

@@ -18,7 +18,17 @@ async def test_member_ranking_and_analysis(app_client, db_session, make_token):
 
     r2 = await app_client.get("/api/v1/members/mem_001/analysis", params={"period":"2026-05"}, headers={"Authorization":f"Bearer {token}"})
     assert r2.status_code == 200
-    assert r2.json()["data"]["totalScore"] == 92.4
+    analysis = r2.json()["data"]
+    assert analysis["totalScore"] == 92.4
+    assert analysis["name"] == "김상위"
+    assert analysis["rank"] == 1
+    assert analysis["rankTotal"] == 1
+    assert analysis["group"] == "TOP"
+    assert analysis["components"]["quality"]["value"] > 0
+    assert analysis["components"]["costEfficiency"]["value"] > 0
+    assert analysis["scoreHistory"][0]["period"] == "2026-05"
+    assert analysis["baseline"] == 100.8
+    assert analysis["improvementTasks"][0]["description"]
 
 
 @pytest.mark.asyncio
